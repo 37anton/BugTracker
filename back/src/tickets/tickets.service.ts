@@ -31,21 +31,32 @@ export class TicketsService {
   }
 
   async findAllForUser(user: { id: number; role: string }, page = 1, limit = 10) {
-    const qb = this.ticketsRepo.createQueryBuilder('t');
-    if (user.role !== 'MANAGER') {
-      qb.where('t.createdById = :userId', { userId: user.id });
-    }
-    qb.orderBy('t.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
-    const [items, total] = await qb.getManyAndCount();
-    return { items, total, page, limit };
+    const whereCondition = user.role === 'MANAGER' 
+      ? {} 
+      : { createdById: user.id };
+    
+    const [items, total] = await this.ticketsRepo.findAndCount({
+      where: whereCondition,
+      relations: ['createdBy'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    
+    // Transforme les éléments pour inclure le nom du propriétaire du ticket
+    const transformedItems = items.map(item => ({
+      ...item,
+      creatorName: item.createdBy?.name || null,
+      createdBy: undefined, // Supprime l'objet utilisateur complet
+    }));
+    
+    return { items: transformedItems, total, page, limit };
   }
 
-  async findOneAllowed(id: number, user: { id: number; role: string }) {
-    const ticket = await this.ticketsRepo.findOne({ where: { id } });
+  async findOneAllowed(ticketId: number, userInfo: { id: number; role: string }) {
+    const ticket = await this.ticketsRepo.findOne({ where: { id: ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    if (user.role !== 'MANAGER' && ticket.createdById !== user.id) {
+    if (userInfo.role !== 'MANAGER' && ticket.createdById !== userInfo.id) {
       return null;
     }
     return ticket;
@@ -68,30 +79,30 @@ export class TicketsService {
     return ticket;
   }
 
-  async history(id: number, user: { userId: number; role: string }) {
+  async history(id: number, user: { id: number; role: string }) {
     const allowed = await this.findOneAllowed(id, user);
     if (!allowed) throw new ForbiddenException('Forbidden');
     return this.historyRepo.find({ where: { ticket: { id } as any }, order: { changedAt: 'DESC' } });
   }
 
-  async createMessage(ticketId: number, dto: CreateMessageDto, user: { userId: number; role: string }) {
+  async createMessage(ticketId: number, dto: CreateMessageDto, user: { id: number; role: string }) {
     const ticket = await this.ticketsRepo.findOne({ where: { id: ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
     if (ticket.status === TicketStatus.CLOSED) {
       throw new ForbiddenException('Ticket is closed');
     }
-    if (user.role !== 'MANAGER' && ticket.createdById !== user.userId) {
+    if (user.role !== 'MANAGER' && ticket.createdById !== user.id) {
       throw new ForbiddenException('Forbidden');
     }
     const msg = this.messagesRepo.create({
       ticketId: ticketId,
-      authorId: user.userId,
+      authorId: user.id,
       content: dto.content,
     });
     return this.messagesRepo.save(msg);
   }
 
-  async listMessages(ticketId: number, user: { userId: number; role: string }) {
+  async listMessages(ticketId: number, user: { id: number; role: string }) {
     const allowed = await this.findOneAllowed(ticketId, user);
     if (!allowed) throw new ForbiddenException('Forbidden');
     return this.messagesRepo.find({ where: { ticketId }, order: { createdAt: 'ASC' } });

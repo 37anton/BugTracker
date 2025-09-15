@@ -9,7 +9,6 @@ const Register: React.FC = () => {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: call API later
     console.log({ name, email, password });
   };
 

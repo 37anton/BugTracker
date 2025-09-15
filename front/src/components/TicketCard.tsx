@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Ticket {
   id: number;
@@ -7,6 +8,8 @@ interface Ticket {
   status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
   createdAt: string;
   updatedAt: string;
+  createdById: number;
+  creatorName?: string;
 }
 
 interface TicketCardProps {
@@ -14,6 +17,7 @@ interface TicketCardProps {
 }
 
 export const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
+  const { user } = useAuth();
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'OPEN':
@@ -58,7 +62,14 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
         
         <div className="flex justify-between items-center text-sm text-gray-500">
           <span>#{ticket.id}</span>
-          <span>{new Date(ticket.createdAt).toLocaleString('fr-FR')}</span>
+          <div className="text-right">
+            <div>{new Date(ticket.createdAt).toLocaleString('fr-FR')}</div>
+            {user?.role === 'MANAGER' && ticket.creatorName && (
+              <div className="text-xs text-gray-400">
+                par {ticket.creatorName}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
