@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: bugtracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bugtracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bugtracker-network
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: bugtracker-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks:
+      - bugtracker-network
+    depends_on:
+      - postgres
+
+  app:
+    build: .
+    container_name: bugtracker-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - DB_DATABASE=bugtracker
+    depends_on:
+      - postgres
+    networks:
+      - bugtracker-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+volumes:
+  postgres_data:
+
+networks:
+  bugtracker-network:
+    driver: bridge
