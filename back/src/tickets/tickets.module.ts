@@ -5,9 +5,10 @@ import { TicketHistory } from '../entities/ticket-history.entity';
 import { TicketsService } from './tickets.service';
 import { TicketsController } from './tickets.controller';
 import { AuthModule } from '../auth/auth.module';
+import { Message } from '../entities/message.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Ticket, TicketHistory]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Ticket, TicketHistory, Message]), AuthModule],
   providers: [TicketsService],
   controllers: [TicketsController],
 })

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tickets')
@@ -28,7 +29,7 @@ export class TicketsController {
   async findOne(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     const result = await this.ticketsService.findOneAllowed(id, req.user);
     if (!result) {
-      return { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden' };
+      throw new ForbiddenException('Forbidden');
     }
     return result;
   }
@@ -51,8 +52,23 @@ export class TicketsController {
   async history(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     const allowed = await this.ticketsService.findOneAllowed(id, req.user);
     if (!allowed) {
-      return { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden' };
+      throw new ForbiddenException('Forbidden');
     }
     return this.ticketsService.history(id, req.user);
+  }
+
+  @Post(':id/messages')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async postMessage(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateMessageDto,
+  ) {
+    return this.ticketsService.createMessage(id, dto, req.user);
+  }
+
+  @Get(':id/messages')
+  async getMessages(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.ticketsService.listMessages(id, req.user);
   }
 }

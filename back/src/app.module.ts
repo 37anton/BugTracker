@@ -9,6 +9,7 @@ import { TicketHistory } from './entities/ticket-history.entity';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { Message } from './entities/message.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { TicketsModule } from './tickets/tickets.module';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'password',
       database: process.env.DB_DATABASE || 'bugtracker',
-      entities: [User, Ticket, TicketHistory],
+      entities: [User, Ticket, TicketHistory, Message],
       synchronize: true, // À désactiver en production
     }),
     UsersModule,

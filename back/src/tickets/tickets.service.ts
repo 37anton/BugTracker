@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
@@ -6,6 +6,8 @@ import { TicketHistory } from '../entities/ticket-history.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { TicketStatus } from '../enums/ticket-status.enum';
+import { Message } from '../entities/message.entity';
+import { CreateMessageDto } from './dto/create-message.dto';
 
 @Injectable()
 export class TicketsService {
@@ -14,6 +16,8 @@ export class TicketsService {
     private readonly ticketsRepo: Repository<Ticket>,
     @InjectRepository(TicketHistory)
     private readonly historyRepo: Repository<TicketHistory>,
+    @InjectRepository(Message)
+    private readonly messagesRepo: Repository<Message>,
   ) {}
 
   async create(dto: CreateTicketDto, userId: number) {
@@ -66,7 +70,30 @@ export class TicketsService {
 
   async history(id: number, user: { userId: number; role: string }) {
     const allowed = await this.findOneAllowed(id, user);
-    if (!allowed) return [];
+    if (!allowed) throw new ForbiddenException('Forbidden');
     return this.historyRepo.find({ where: { ticket: { id } as any }, order: { changedAt: 'DESC' } });
+  }
+
+  async createMessage(ticketId: number, dto: CreateMessageDto, user: { userId: number; role: string }) {
+    const ticket = await this.ticketsRepo.findOne({ where: { id: ticketId } });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (ticket.status === TicketStatus.CLOSED) {
+      throw new ForbiddenException('Ticket is closed');
+    }
+    if (user.role !== 'MANAGER' && ticket.createdById !== user.userId) {
+      throw new ForbiddenException('Forbidden');
+    }
+    const msg = this.messagesRepo.create({
+      ticketId: ticketId,
+      authorId: user.userId,
+      content: dto.content,
+    });
+    return this.messagesRepo.save(msg);
+  }
+
+  async listMessages(ticketId: number, user: { userId: number; role: string }) {
+    const allowed = await this.findOneAllowed(ticketId, user);
+    if (!allowed) throw new ForbiddenException('Forbidden');
+    return this.messagesRepo.find({ where: { ticketId }, order: { createdAt: 'ASC' } });
   }
 }
