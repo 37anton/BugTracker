@@ -6,6 +6,7 @@ import Home from './components/pages/Home'
 import Login from './components/pages/Login'
 import Register from './components/pages/Register'
 import Dashboard from './components/pages/Dashboard'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { ToastProvider } from './components/toast/ToastProvider'
 import { AuthProvider } from './contexts/AuthContext'
 
@@ -13,7 +14,14 @@ const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
-  { path: '/dashboard', element: <Dashboard /> },
+  { 
+    path: '/dashboard', 
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    ) 
+  },
 ])
 
 createRoot(document.getElementById('root')!).render(
