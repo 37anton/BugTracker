@@ -63,7 +63,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           <div key={t.id} className={`alert ${variantToAlertClass[t.variant ?? 'info']} shadow`}>
             <div className="flex items-center gap-2">
               <span>{t.message}</span>
-              <button className="btn btn-xs" onClick={() => remove(t.id)}>OK</button>
             </div>
           </div>
         ))}

@@ -6,6 +6,7 @@ import Home from './components/pages/Home'
 import Login from './components/pages/Login'
 import Register from './components/pages/Register'
 import Dashboard from './components/pages/Dashboard'
+import TicketDetail from './components/pages/TicketDetail'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ToastProvider } from './components/toast/ToastProvider'
 import { AuthProvider } from './contexts/AuthContext'
@@ -19,6 +20,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Dashboard />
+      </ProtectedRoute>
+    ) 
+  },
+  { 
+    path: '/tickets/:id', 
+    element: (
+      <ProtectedRoute>
+        <TicketDetail />
       </ProtectedRoute>
     ) 
   },

@@ -105,6 +105,10 @@ export class TicketsService {
   async listMessages(ticketId: number, user: { id: number; role: string }) {
     const allowed = await this.findOneAllowed(ticketId, user);
     if (!allowed) throw new ForbiddenException('Forbidden');
-    return this.messagesRepo.find({ where: { ticketId }, order: { createdAt: 'ASC' } });
+    return this.messagesRepo.find({ 
+      where: { ticketId }, 
+      relations: ['author'],
+      order: { createdAt: 'ASC' } 
+    });
   }
 }

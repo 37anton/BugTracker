@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Ticket {
@@ -18,6 +19,7 @@ interface TicketCardProps {
 
 export const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'OPEN':
@@ -48,8 +50,15 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
     ? ticket.description.substring(0, 20) + '...'
     : ticket.description;
 
+  const handleClick = () => {
+    navigate(`/tickets/${ticket.id}`);
+  };
+
   return (
-    <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow">
+    <div 
+      className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleClick}
+    >
       <div className="card-body p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="card-title text-lg font-semibold">{ticket.title}</h3>
