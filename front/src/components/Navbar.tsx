@@ -1,17 +1,51 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
   return (
     <div className="navbar bg-base-100 shadow-sm">
       <div className="flex-1">
-        <a className="btn btn-ghost text-xl">BugTracker</a>
+        <button 
+          className="btn btn-ghost text-xl"
+          onClick={() => navigate('/')}
+        >
+          BugTracker
+        </button>
       </div>
 
       {/* Boutons desktop (>= md) */}
       <div className="hidden md:flex gap-2">
-        <a className="btn btn-ghost">Se connecter</a>
-        <a className="btn btn-ghost">Se déconnecter</a>
-        <a className="btn btn-ghost">S'inscrire</a>
+        {!isAuthenticated ? (
+          <>
+            <button 
+              className="btn btn-ghost"
+              onClick={() => navigate('/')}
+            >
+              Se connecter
+            </button>
+            <button 
+              className="btn btn-ghost"
+              onClick={() => navigate('/register')}
+            >
+              S'inscrire
+            </button>
+          </>
+        ) : (
+          <button 
+            className="btn btn-ghost"
+            onClick={handleLogout}
+          >
+            Se déconnecter
+          </button>
+        )}
       </div>
 
       {/* Burger mobile (< md) */}
@@ -40,9 +74,20 @@ const Navbar: React.FC = () => {
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
           >
-            <li><a /* href="#" */>Se connecter</a></li>
-            <li><a /* href="#" */>Se déconnecter</a></li>
-            <li><a /* href="#" */>S'inscrire</a></li>
+            {!isAuthenticated ? (
+              <>
+                <li>
+                  <button onClick={() => navigate('/')}>Se connecter</button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/register')}>S'inscrire</button>
+                </li>
+              </>
+            ) : (
+              <li>
+                <button onClick={handleLogout}>Se déconnecter</button>
+              </li>
+            )}
           </ul>
         </div>
       </div>
