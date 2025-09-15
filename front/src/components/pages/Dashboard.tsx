@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from '../../components/Navbar';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../components/toast/ToastProvider';
 
 export const Dashboard: React.FC = () => {
+  const { user } = useAuth();
+  const { show } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      show(`Bonjour ${user.name} ! 👋`, { variant: 'success' });
+    }
+  }, [user, show]);
+
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />

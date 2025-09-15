@@ -7,6 +7,7 @@ import Login from './components/pages/Login'
 import Register from './components/pages/Register'
 import Dashboard from './components/pages/Dashboard'
 import { ToastProvider } from './components/toast/ToastProvider'
+import { AuthProvider } from './contexts/AuthContext'
 
 const router = createBrowserRouter([
   { path: '/', element: <Home /> },
@@ -17,8 +18,10 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ToastProvider>
-      <RouterProvider router={router} />
-    </ToastProvider>
+    <AuthProvider>
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
+    </AuthProvider>
   </StrictMode>,
 )
