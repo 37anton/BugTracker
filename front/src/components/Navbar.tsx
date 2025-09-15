@@ -11,6 +11,7 @@ const Navbar: React.FC = () => {
       <div className="hidden md:flex gap-2">
         <a className="btn btn-ghost">Se connecter</a>
         <a className="btn btn-ghost">Se déconnecter</a>
+        <a className="btn btn-ghost">S'inscrire</a>
       </div>
 
       {/* Burger mobile (< md) */}
@@ -41,6 +42,7 @@ const Navbar: React.FC = () => {
           >
             <li><a /* href="#" */>Se connecter</a></li>
             <li><a /* href="#" */>Se déconnecter</a></li>
+            <li><a /* href="#" */>S'inscrire</a></li>
           </ul>
         </div>
       </div>
