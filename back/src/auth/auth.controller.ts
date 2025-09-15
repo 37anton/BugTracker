@@ -2,10 +2,34 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards, UseP
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt.guard';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { UsersService } from '../users/users.service';
+import { UserRole } from '../enums/user-role.enum';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async register(@Body() body: RegisterDto) {
+    const existing = await this.usersService.findByEmail(body.email);
+    if (existing) {
+      return { statusCode: HttpStatus.CONFLICT, message: 'Email déjà utilisé' };
+    }
+    const user = await this.usersService.createUser({
+      email: body.email,
+      password: body.password,
+      name: body.name,
+      role: UserRole.CLIENT,
+    });
+    const token = await this.authService.login(user);
+    return token;
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
