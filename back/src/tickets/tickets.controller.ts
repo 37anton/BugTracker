@@ -13,7 +13,7 @@ export class TicketsController {
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async create(@Req() req: any, @Body() dto: CreateTicketDto) {
-    return this.ticketsService.create(dto, req.user.userId);
+    return this.ticketsService.create(dto, req.user.id);
   }
 
   @Get()
@@ -45,7 +45,7 @@ export class TicketsController {
     if (req.user.role !== 'MANAGER') {
       return { statusCode: HttpStatus.FORBIDDEN, message: 'Only MANAGER can change status' };
     }
-    return this.ticketsService.changeStatus(id, dto.status, req.user.userId);
+    return this.ticketsService.changeStatus(id, dto.status, req.user.id);
   }
 
   @Get(':id/history')

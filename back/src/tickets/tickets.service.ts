@@ -30,10 +30,10 @@ export class TicketsService {
     return this.ticketsRepo.save(ticket);
   }
 
-  async findAllForUser(user: { userId: number; role: string }, page = 1, limit = 10) {
+  async findAllForUser(user: { id: number; role: string }, page = 1, limit = 10) {
     const qb = this.ticketsRepo.createQueryBuilder('t');
     if (user.role !== 'MANAGER') {
-      qb.where('t.createdById = :userId', { userId: user.userId });
+      qb.where('t.createdById = :userId', { userId: user.id });
     }
     qb.orderBy('t.createdAt', 'DESC')
       .skip((page - 1) * limit)
@@ -42,10 +42,10 @@ export class TicketsService {
     return { items, total, page, limit };
   }
 
-  async findOneAllowed(id: number, user: { userId: number; role: string }) {
+  async findOneAllowed(id: number, user: { id: number; role: string }) {
     const ticket = await this.ticketsRepo.findOne({ where: { id } });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    if (user.role !== 'MANAGER' && ticket.createdById !== user.userId) {
+    if (user.role !== 'MANAGER' && ticket.createdById !== user.id) {
       return null;
     }
     return ticket;
