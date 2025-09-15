@@ -6,6 +6,8 @@ import { AppService } from './app.service';
 import { User } from './entities/user.entity';
 import { Ticket } from './entities/ticket.entity';
 import { TicketHistory } from './entities/ticket-history.entity';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { TicketHistory } from './entities/ticket-history.entity';
       entities: [User, Ticket, TicketHistory],
       synchronize: true, // À désactiver en production
     }),
+    UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
