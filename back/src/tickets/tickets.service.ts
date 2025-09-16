@@ -110,7 +110,11 @@ export class TicketsService {
   async history(id: number, user: { id: number; role: string }) {
     const allowed = await this.findOneAllowed(id, user);
     if (!allowed) throw new ForbiddenException('Forbidden');
-    return this.historyRepo.find({ where: { ticket: { id } as any }, order: { changedAt: 'DESC' } });
+    return this.historyRepo.find({ 
+      where: { ticket: { id } as any }, 
+      relations: ['changedBy'],
+      order: { changedAt: 'DESC' } 
+    });
   }
 
   async createMessage(ticketId: number, dto: CreateMessageDto, user: { id: number; role: string }) {

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/toast/ToastProvider';
+import Timeline from '../../components/Timeline';
 
 interface Ticket {
   id: number;
@@ -27,6 +28,17 @@ interface Message {
   };
 }
 
+interface TimelineItem {
+  id: number;
+  newStatus: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
+  changedAt: string;
+  changedBy: {
+    id: number;
+    name: string;
+    role: 'CLIENT' | 'MANAGER';
+  };
+}
+
 export const TicketDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -35,9 +47,11 @@ export const TicketDetail: React.FC = () => {
   
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoadingTicket, setIsLoadingTicket] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const fetchTicket = useCallback(async () => {
@@ -95,6 +109,33 @@ export const TicketDetail: React.FC = () => {
     }
   }, [token, id, show]);
 
+  const fetchTimeline = useCallback(async () => {
+    if (!token || !id) return;
+    
+    try {
+      setIsLoadingTimeline(true);
+      const response = await fetch(`http://localhost:3000/tickets/${id}/history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTimelineItems(data);
+      } else if (response.status === 403) {
+        show('Accès refusé à l\'historique de ce ticket', { variant: 'error' });
+      } else {
+        show('Erreur lors du chargement de l\'historique', { variant: 'error' });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'historique:', error);
+      show('Erreur de connexion', { variant: 'error' });
+    } finally {
+      setIsLoadingTimeline(false);
+    }
+  }, [token, id, show]);
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !token || !id) return;
@@ -144,7 +185,8 @@ export const TicketDetail: React.FC = () => {
   useEffect(() => {
     fetchTicket();
     fetchMessages();
-  }, [fetchTicket, fetchMessages]);
+    fetchTimeline();
+  }, [fetchTicket, fetchMessages, fetchTimeline]);
 
   if (isLoadingTicket) {
     return (
@@ -214,6 +256,21 @@ export const TicketDetail: React.FC = () => {
                 <div>Modifié le {new Date(ticket.updatedAt).toLocaleString('fr-FR')}</div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Timeline des statuts */}
+        <div className="card bg-base-100 shadow-xl mb-8">
+          <div className="card-body">
+            {isLoadingTimeline ? (
+              <div className="flex justify-center py-8">
+                <span className="loading loading-spinner"></span>
+              </div>
+            ) : timelineItems.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Aucun historique disponible</p>
+            ) : (
+              <Timeline items={timelineItems} />
+            )}
           </div>
         </div>
 
