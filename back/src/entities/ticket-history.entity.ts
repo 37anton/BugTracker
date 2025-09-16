@@ -12,12 +12,6 @@ export class TicketHistory {
     type: 'enum',
     enum: TicketStatus,
   })
-  previousStatus: TicketStatus;
-
-  @Column({
-    type: 'enum',
-    enum: TicketStatus,
-  })
   newStatus: TicketStatus;
 
 

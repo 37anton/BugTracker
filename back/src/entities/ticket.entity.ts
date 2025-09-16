@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { TicketStatus } from '../enums/ticket-status.enum';
 import { User } from './user.entity';
 import { TicketHistory } from './ticket-history.entity';
 
@@ -13,13 +12,6 @@ export class Ticket {
 
   @Column('text')
   description: string;
-
-  @Column({
-    type: 'enum',
-    enum: TicketStatus,
-    default: TicketStatus.OPEN,
-  })
-  status: TicketStatus;
 
   @CreateDateColumn()
   createdAt: Date;

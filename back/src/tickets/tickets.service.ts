@@ -24,10 +24,19 @@ export class TicketsService {
     const ticket = this.ticketsRepo.create({
       title: dto.title,
       description: dto.description,
-      status: TicketStatus.OPEN,
       createdById: userId,
     });
-    return this.ticketsRepo.save(ticket);
+    const savedTicket = await this.ticketsRepo.save(ticket);
+
+    // Créer automatiquement un historique avec le statut OPEN
+    const history = this.historyRepo.create({
+      ticket: savedTicket,
+      newStatus: TicketStatus.OPEN,
+      changedById: userId,
+    });
+    await this.historyRepo.save(history);
+
+    return savedTicket;
   }
 
   async findAllForUser(user: { id: number; role: string }, page = 1, limit = 10) {
@@ -43,35 +52,54 @@ export class TicketsService {
       take: limit,
     });
     
-    // Transforme les éléments pour inclure le nom du propriétaire du ticket
-    const transformedItems = items.map(item => ({
-      ...item,
-      creatorName: item.createdBy?.name || null,
-      createdBy: undefined, // Supprime l'objet utilisateur complet
+    // Récupérer le statut actuel pour chaque ticket
+    const transformedItems = await Promise.all(items.map(async (item) => {
+      const lastHistory = await this.historyRepo.findOne({
+        where: { ticket: { id: item.id } as any },
+        order: { changedAt: 'DESC' }
+      });
+
+      return {
+        ...item,
+        status: lastHistory?.newStatus || TicketStatus.OPEN,
+        creatorName: item.createdBy?.name || null,
+        createdBy: undefined, // Supprime l'objet utilisateur complet
+      };
     }));
     
     return { items: transformedItems, total, page, limit };
   }
 
   async findOneAllowed(ticketId: number, userInfo: { id: number; role: string }) {
-    const ticket = await this.ticketsRepo.findOne({ where: { id: ticketId } });
+    const ticket = await this.ticketsRepo.findOne({ 
+      where: { id: ticketId },
+      relations: ['createdBy']
+    });
     if (!ticket) throw new NotFoundException('Ticket not found');
     if (userInfo.role !== 'MANAGER' && ticket.createdById !== userInfo.id) {
       return null;
     }
-    return ticket;
+
+    // Récupérer le dernier statut depuis l'historique
+    const lastHistory = await this.historyRepo.findOne({
+      where: { ticket: { id: ticketId } as any },
+      order: { changedAt: 'DESC' }
+    });
+
+    return {
+      ...ticket,
+      status: lastHistory?.newStatus || TicketStatus.OPEN,
+      creatorName: ticket.createdBy?.name || null,
+      createdBy: undefined // Supprime l'objet utilisateur complet
+    };
   }
 
   async changeStatus(id: number, newStatus: TicketStatus, changedById: number) {
     const ticket = await this.ticketsRepo.findOne({ where: { id } });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    const previousStatus = ticket.status;
-    ticket.status = newStatus;
-    await this.ticketsRepo.save(ticket);
 
     const history = this.historyRepo.create({
       ticket: ticket as any,
-      previousStatus,
       newStatus,
       changedById,
     });
@@ -88,7 +116,14 @@ export class TicketsService {
   async createMessage(ticketId: number, dto: CreateMessageDto, user: { id: number; role: string }) {
     const ticket = await this.ticketsRepo.findOne({ where: { id: ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    if (ticket.status === TicketStatus.CLOSED) {
+    
+    // Récupérer le dernier statut depuis l'historique
+    const lastHistory = await this.historyRepo.findOne({
+      where: { ticket: { id: ticketId } as any },
+      order: { changedAt: 'DESC' }
+    });
+    
+    if (lastHistory?.newStatus === TicketStatus.CLOSED) {
       throw new ForbiddenException('Ticket is closed');
     }
     if (user.role !== 'MANAGER' && ticket.createdById !== user.id) {
