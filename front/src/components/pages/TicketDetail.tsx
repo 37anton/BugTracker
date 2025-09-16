@@ -53,6 +53,7 @@ export const TicketDetail: React.FC = () => {
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
 
   const fetchTicket = useCallback(async () => {
     if (!token || !id) return;
@@ -135,6 +136,50 @@ export const TicketDetail: React.FC = () => {
       setIsLoadingTimeline(false);
     }
   }, [token, id, show]);
+
+  const changeStatus = async (newStatus: 'OPEN' | 'IN_PROGRESS' | 'CLOSED') => {
+    if (!token || !id) return;
+
+    try {
+      setIsChangingStatus(true);
+      const response = await fetch(`http://localhost:3000/tickets/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        show(`Statut changé vers ${getStatusLabel(newStatus)}`, { variant: 'success' });
+        // Recharger les données
+        fetchTicket();
+        fetchTimeline();
+      } else {
+        const errorData = await response.json();
+        show(errorData.message || 'Erreur lors du changement de statut', { variant: 'error' });
+      }
+    } catch (error) {
+      console.error('Erreur lors du changement de statut:', error);
+      show('Erreur de connexion', { variant: 'error' });
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'OPEN':
+        return 'Ouvert';
+      case 'IN_PROGRESS':
+        return 'En cours';
+      case 'CLOSED':
+        return 'Fermé';
+      default:
+        return status;
+    }
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,8 +279,53 @@ export const TicketDetail: React.FC = () => {
           <div className="card-body">
             <div className="flex justify-between items-start mb-4">
               <h1 className="card-title text-2xl">{ticket.title}</h1>
-              <div className={getStatusBadgeClass(ticket.status)}>
-                {ticket.status.replace('_', ' ')}
+              <div className="flex items-center gap-3">
+                <div className={getStatusBadgeClass(ticket.status)}>
+                  {getStatusLabel(ticket.status)}
+                </div>
+                {user?.role === 'MANAGER' && (
+                  <div className="dropdown dropdown-end">
+                    <div tabIndex={0} role="button" className="btn btn-sm btn-outline">
+                      {isChangingStatus ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                      ) : (
+                        'Changer statut'
+                      )}
+                    </div>
+                    <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                      <li>
+                        <button 
+                          onClick={() => changeStatus('OPEN')}
+                          disabled={ticket.status === 'OPEN' || isChangingStatus}
+                          className={ticket.status === 'OPEN' ? 'disabled' : ''}
+                        >
+                          <span className="badge badge-success badge-sm"></span>
+                          Ouvrir
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          onClick={() => changeStatus('IN_PROGRESS')}
+                          disabled={ticket.status === 'IN_PROGRESS' || isChangingStatus}
+                          className={ticket.status === 'IN_PROGRESS' ? 'disabled' : ''}
+                        >
+                          <span className="badge badge-warning badge-sm"></span>
+                          En cours
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          onClick={() => changeStatus('CLOSED')}
+                          disabled={ticket.status === 'CLOSED' || isChangingStatus}
+                          className={ticket.status === 'CLOSED' ? 'disabled' : ''}
+                        >
+                          <span className="badge badge-error badge-sm"></span>
+                          Fermer
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
             

@@ -57,7 +57,7 @@ const Timeline: React.FC<TimelineProps> = ({ items }) => {
       <h3 className="text-lg font-semibold mb-4">Historique des statuts</h3>
       <div className="overflow-x-auto">
         <ul className="timeline">
-        {items.map((item, index) => {
+        {items.slice().reverse().map((item, index) => {
           const isEven = index % 2 === 0;
           const isLast = index === items.length - 1;
           
